@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Movie — COBACCO Creative</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff;
+    --ink:#111111;
+    --ink-soft:#6b6b6b;
+    --line:#e8e8e6;
+    --font:'Inter', -apple-system, sans-serif;
+    --space-1:8px;--space-2:16px;--space-3:24px;--space-4:40px;--space-5:64px;--space-6:96px;
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); font-family:var(--font);
+    overflow-x:clip; -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit; text-decoration:none;}
+  img{max-width:100%; display:block;}
+
+  /* ---------- grain ---------- */
+  .grain{
+    position:fixed; inset:0; z-index:50; pointer-events:none; opacity:0.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 9 -3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:140px 140px;
+  }
+
+  /* ---------- custom cursor ---------- */
+  .cursor-dot, .cursor-ring{
+    position:fixed; top:0; left:0; pointer-events:none; z-index:9999;
+    border-radius:50%; mix-blend-mode:difference;
+    transform:translate(-50%,-50%);
+  }
+  .cursor-dot{ width:6px; height:6px; background:#fff; }
+  .cursor-ring{
+    width:17px; height:17px; border:1px solid #fff; opacity:0.8;
+    transition:width .3s var(--ease), height .3s var(--ease), opacity .3s var(--ease);
+  }
+  .cursor-ring.active{ width:32px; height:32px; opacity:1; }
+  @media (hover:hover) and (pointer:fine){
+    body.cursor-ready, body.cursor-ready a, body.cursor-ready .grid-item{ cursor:none; }
+  }
+  @media (hover:none), (pointer:coarse){
+    .cursor-dot, .cursor-ring, .grain{ display:none; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .cursor-dot, .cursor-ring{ display:none; }
+    body.cursor-ready{ cursor:auto; }
+  }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--line);
+  }
+  .logo{ font-size:0.85rem; font-weight:600; letter-spacing:0.01em; display:inline-block; }
+  .back{ font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-soft); display:inline-block; }
+
+  .page-head{
+    padding:var(--space-4) var(--space-4) 0;
+  }
+  .page-head h1{ font-size:0.8rem; font-weight:600; letter-spacing:0.12em; margin:0; }
+  .page-head span{ font-size:0.7rem; color:var(--ink-soft); }
+
+  /* ---------- grid ---------- */
+  .grid{
+    display:grid; grid-template-columns:repeat(3, 1fr);
+    gap:var(--space-4) var(--space-3); padding:var(--space-4) var(--space-4) var(--space-6);
+  }
+  .grid-item{
+    opacity:0; transform:translateY(24px);
+    transition:opacity .9s var(--ease), transform .9s var(--ease);
+  }
+  .grid-item.in{ opacity:1; transform:translateY(0); }
+  .thumb{
+    position:relative; aspect-ratio:16/9; overflow:hidden; background:#eaeae7; border-radius:2px; cursor:pointer;
+    transition:transform .5s var(--ease), box-shadow .5s var(--ease);
+  }
+  .thumb:hover{ transform:translateY(-6px); box-shadow:0 20px 30px -16px rgba(0,0,0,0.22); }
+  .thumb img{ width:100%; height:100%; object-fit:cover; transition:transform .6s var(--ease); }
+  .thumb:hover img{ transform:scale(1.05); }
+  .play-badge{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:52px; height:52px; border-radius:50%;
+    background:rgba(255,255,255,0.92); display:flex; align-items:center; justify-content:center;
+    font-size:0.75rem; color:#111; padding-left:3px;
+    box-shadow:0 8px 20px -8px rgba(0,0,0,0.4);
+    transition:transform .4s var(--ease), background .3s var(--ease);
+  }
+  .thumb:hover .play-badge{ transform:translate(-50%,-50%) scale(1.12); background:#fff; }
+  .caption{
+    margin-top:var(--space-1); font-size:0.76rem; letter-spacing:0.01em; color:var(--ink); line-height:1.5;
+  }
+
+  .empty{ padding:var(--space-6) var(--space-4); color:var(--ink-soft); font-size:0.85rem; }
+
+  @media (max-width:1024px){
+    .grid{ grid-template-columns:repeat(2, 1fr); }
+  }
+  @media (max-width:640px){
+    header, .page-head{ padding-left:var(--space-2); padding-right:var(--space-2); }
+    .grid{ padding-left:var(--space-2); padding-right:var(--space-2); grid-template-columns:1fr; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .grid-item, .thumb, .thumb img, .play-badge{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<header>
+  <a class="logo" href="home.html">COBACCO Creative</a>
+  <a class="back" href="home.html">← TOP</a>
+</header>
+
+<div class="page-head">
+  <h1>MOVIE</h1>
+</div>
+
+<section class="grid" id="grid"></section>
+
+<script src="works-data.js"></script>
+<script>
+  const gridEl = document.getElementById('grid');
+
+  function renderGrid(){
+    if(!MOVIES || MOVIES.length === 0){
+      gridEl.insertAdjacentHTML('afterend', '<p class="empty">動画がまだありません。</p>');
+      return;
+    }
+    gridEl.innerHTML = MOVIES.map(m => `
+      <div class="grid-item">
+        <a class="thumb" href="${m.url}" target="_blank" rel="noopener" aria-label="${m.title} を再生">
+          <img src="${m.image}" width="${m.w}" height="${m.h}" alt="${m.title}">
+          <span class="play-badge" aria-hidden="true">▶</span>
+        </a>
+        <p class="caption">${m.title}</p>
+      </div>
+    `).join('');
+
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, {threshold:0.1, rootMargin:'0px 0px -40px 0px'});
+    gridEl.querySelectorAll('.grid-item').forEach(el=> io.observe(el));
+  }
+
+  renderGrid();
+
+  /* ---------- cursor dot + ring ---------- */
+  const canHover = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if(canHover && !reduceMotion){
+    document.body.classList.add('cursor-ready');
+    const dot = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let mx = window.innerWidth/2, my = window.innerHeight/2, rx = mx, ry = my;
+
+    window.addEventListener('mousemove', (e)=>{
+      mx = e.clientX; my = e.clientY;
+      dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
+    });
+
+    function ringLoop(){
+      rx += (mx-rx)*0.18;
+      ry += (my-ry)*0.18;
+      ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%,-50%)`;
+      requestAnimationFrame(ringLoop);
+    }
+    ringLoop();
+
+    document.addEventListener('mouseover', (e)=>{
+      if(e.target.closest('a, .thumb')) ring.classList.add('active');
+    });
+    document.addEventListener('mouseout', (e)=>{
+      if(e.target.closest('a, .thumb')) ring.classList.remove('active');
+    });
+  }
+</script>
+</body>
+</html>
