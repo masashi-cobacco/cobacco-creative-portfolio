@@ -1,11 +1,4 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false,
-  "rewrites": [
-    { "source": "/branding", "destination": "/works.html" },
-    { "source": "/corporate", "destination": "/works.html" },
-    { "source": "/profile", "destination": "/works.html" },
-    { "source": "/artist", "destination": "/works.html" },
-    { "source": "/event", "destination": "/works.html" }
-  ]
+  "trailingSlash": false
 }
