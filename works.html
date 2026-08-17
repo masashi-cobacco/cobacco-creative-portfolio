@@ -205,11 +205,11 @@
     <span></span><span></span><span></span>
   </button>
   <a href="/about">ABOUT</a>
-  <a href="/works?cat=branding">BRANDING</a>
-  <a href="/works?cat=corporate">CORPORATE</a>
-  <a href="/works?cat=profile">PROFILE</a>
-  <a href="/works?cat=artist">ARTIST</a>
-  <a href="/works?cat=event">EVENT</a>
+  <a href="/branding">BRANDING</a>
+  <a href="/corporate">CORPORATE</a>
+  <a href="/profile">PROFILE</a>
+  <a href="/artist">ARTIST</a>
+  <a href="/event">EVENT</a>
   <a href="/movies">MOVIE</a>
 </nav>
 
@@ -233,8 +233,16 @@
     return (work.w < work.h) ? '50% 18%' : '50% 50%';
   }
 
+  // カテゴリ判定: /branding のようなクリーンURL(pathname)を優先し、
+  // 従来の /branding (クエリ)にも後方互換で対応。
   const params = new URLSearchParams(location.search);
-  let currentFilter = params.get('cat') && WORKS_META[params.get('cat')] ? params.get('cat') : 'all';
+  const pathCat = location.pathname.replace(/^\/+|\/+$/g, '');
+  let currentFilter = 'all';
+  if(params.get('cat') && WORKS_META[params.get('cat')]){
+    currentFilter = params.get('cat');
+  }else if(WORKS_META[pathCat]){
+    currentFilter = pathCat;
+  }
 
   const filtersEl = document.getElementById('filters');
   const gridEl = document.getElementById('grid');
@@ -249,7 +257,7 @@
     filtersEl.querySelectorAll('button').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         currentFilter = btn.dataset.cat;
-        history.replaceState(null, '', currentFilter === 'all' ? location.pathname : `?cat=${currentFilter}`);
+        history.replaceState(null, '', currentFilter === 'all' ? '/works' : `/${currentFilter}`);
         buildFilters();
         renderGrid();
       });
