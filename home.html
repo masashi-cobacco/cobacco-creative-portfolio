@@ -70,13 +70,13 @@
   /* ---------- lightbox ---------- */
   .lightbox{
     position:fixed; inset:0; z-index:500; background:rgba(255,255,255,0.97);
-    display:flex; align-items:center; justify-content:center; padding:var(--space-5);
+    display:flex; align-items:center; justify-content:center; padding:var(--space-3);
     opacity:0; visibility:hidden; transition:opacity .4s var(--ease);
   }
   .lightbox.open{ opacity:1; visibility:visible; }
-  .lightbox-figure{ max-width:min(1100px,86vw); max-height:80vh; text-align:center; }
+  .lightbox-figure{ max-width:min(1500px,95vw); max-height:92vh; text-align:center; }
   .lightbox-figure img{
-    max-width:100%; max-height:72vh; margin:0 auto; object-fit:contain;
+    max-width:100%; max-height:85vh; margin:0 auto; object-fit:contain;
     opacity:0; transform:scale(0.98); transition:opacity .35s var(--ease), transform .35s var(--ease);
   }
   .lightbox-figure img.show{ opacity:1; transform:scale(1); }
@@ -255,8 +255,12 @@
 
   @media (max-width:640px){
     .hero-menu{ left:var(--space-2); bottom:var(--space-2); gap:var(--space-2); }
-    .menu-toggle{ display:flex; }
-    /* スマホはトップにいる時も常に黒アイコン。グレー背景はタップして開いた時だけ */
+    .menu-toggle{
+      display:flex;
+      width:44px; height:44px; border-radius:50%;
+      background:rgba(255,255,255,0.65); backdrop-filter:blur(8px) saturate(1.1); -webkit-backdrop-filter:blur(8px) saturate(1.1);
+    }
+    /* スマホはトップにいる時も常に黒アイコン+アイコン専用のグレー背景。メニュー全体のグレー背景はタップして開いた時だけ */
     .menu-toggle span{ background:var(--ink); mix-blend-mode:normal; }
     .hero-menu.scrolled:not(.open){ background:rgba(255,255,255,0); backdrop-filter:none; -webkit-backdrop-filter:none; }
     .hero-menu.open{ background:rgba(255,255,255,0.55); backdrop-filter:blur(8px) saturate(1.1); -webkit-backdrop-filter:blur(8px) saturate(1.1); }

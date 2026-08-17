@@ -63,6 +63,40 @@
   .logo{ font-size:0.85rem; font-weight:600; letter-spacing:0.01em; display:inline-block; }
   .back{ font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-soft); display:inline-block; }
 
+  /* ---------- mobile menu (ハンバーガー) ---------- */
+  .mobile-menu{ display:none; }
+  .menu-toggle{
+    display:none; flex-direction:column; justify-content:center; align-items:center; gap:5px;
+    width:44px; height:44px; padding:0; border:none; border-radius:50%; cursor:pointer;
+    background:rgba(255,255,255,0.65); backdrop-filter:blur(8px) saturate(1.1); -webkit-backdrop-filter:blur(8px) saturate(1.1);
+    order:99;
+  }
+  .menu-toggle span{
+    display:block; width:22px; height:1.5px; background:var(--ink);
+    transition:transform .35s var(--ease), opacity .3s var(--ease);
+  }
+  .mobile-menu.open .menu-toggle span:nth-child(1){ transform:translateY(6.5px) rotate(45deg); }
+  .mobile-menu.open .menu-toggle span:nth-child(2){ opacity:0; }
+  .mobile-menu.open .menu-toggle span:nth-child(3){ transform:translateY(-6.5px) rotate(-45deg); }
+  .mobile-menu a{
+    display:block; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink);
+    padding-bottom:3px; border-bottom:1px solid rgba(17,17,17,0.35);
+    opacity:0; transform:translateY(8px); pointer-events:none;
+    transition:opacity .25s var(--ease), transform .25s var(--ease), border-color .2s;
+  }
+  .mobile-menu.open a{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .mobile-menu a:hover{ border-color:var(--ink); }
+  @media (max-width:640px){
+    .mobile-menu{
+      display:flex; flex-direction:column; align-items:flex-start; gap:10px;
+      position:fixed; left:var(--space-2); bottom:var(--space-2); z-index:60;
+    }
+    .menu-toggle{ display:flex; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .menu-toggle span, .mobile-menu a{ transition:none; }
+  }
+
   .page-head{
     padding:var(--space-4) var(--space-4) 0;
   }
@@ -124,6 +158,19 @@
   <a class="back" href="home.html">← TOP</a>
 </header>
 
+<nav class="mobile-menu" id="mobileMenu">
+  <button class="menu-toggle" id="menuToggle" aria-label="メニュー" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <a href="about.html">ABOUT</a>
+  <a href="works.html?cat=branding">BRANDING</a>
+  <a href="works.html?cat=corporate">CORPORATE</a>
+  <a href="works.html?cat=profile">PROFILE</a>
+  <a href="works.html?cat=artist">ARTIST</a>
+  <a href="works.html?cat=event">EVENT</a>
+  <a href="movies.html">MOVIE</a>
+</nav>
+
 <div class="page-head">
   <h1>MOVIE</h1>
 </div>
@@ -161,6 +208,24 @@
   }
 
   renderGrid();
+
+  /* ---------- モバイル: ハンバーガーメニューの開閉 ---------- */
+  {
+    const mobileMenuEl = document.getElementById('mobileMenu');
+    const menuToggle = document.getElementById('menuToggle');
+    if(mobileMenuEl && menuToggle){
+      menuToggle.addEventListener('click', ()=>{
+        const isOpen = mobileMenuEl.classList.toggle('open');
+        menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+      mobileMenuEl.querySelectorAll('a').forEach(a=>{
+        a.addEventListener('click', ()=>{
+          mobileMenuEl.classList.remove('open');
+          menuToggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+    }
+  }
 
   /* ---------- cursor dot + ring ---------- */
   const canHover = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
