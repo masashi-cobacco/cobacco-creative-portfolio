@@ -566,8 +566,7 @@
         if(!track) return;
         const halfWidth = track.scrollWidth / 2; // アイテムを2セット並べているので、半分が1周分の幅
         if(!halfWidth) return;
-        const duration = parseFloat(track.style.animationDuration) || 40;
-        const pxPerSecond = halfWidth / duration;
+        const pxPerSecond = 14; // ゆったり流れる速さに固定(カテゴリごとの速度差はなくす)
         const dir = marquee.classList.contains('reverse') ? -1 : 1;
 
         marquee.scrollLeft = dir < 0 ? halfWidth : 0;
@@ -577,13 +576,19 @@
         let lastTs = null;
 
         function step(ts){
-          if(lastTs === null) lastTs = ts;
+          if(lastTs === null){
+            // 最初のフレームは基準時刻を記録するだけで、移動計算はしない
+            // (dt=0のまま計算すると境界判定が誤発火してカクつく/止まる原因になるため)
+            lastTs = ts;
+            requestAnimationFrame(step);
+            return;
+          }
           const dt = (ts - lastTs) / 1000;
           lastTs = ts;
           if(!paused){
             let next = marquee.scrollLeft + pxPerSecond * dir * dt;
             if(next >= halfWidth) next -= halfWidth;
-            if(next <= 0) next += halfWidth;
+            else if(next < 0) next += halfWidth;
             marquee.scrollLeft = next;
           }
           requestAnimationFrame(step);
