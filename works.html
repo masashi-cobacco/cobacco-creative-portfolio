@@ -137,7 +137,7 @@
   @media (max-width:640px){
     .mobile-menu{
       display:flex; flex-direction:column; align-items:flex-end; gap:10px;
-      position:fixed; bottom:var(--space-2); right:var(--space-2); left:auto; top:auto; z-index:60;
+      position:fixed; top:64px; right:var(--space-2); left:auto; bottom:auto; z-index:60;
       padding:12px 16px; border-radius:3px;
       transition:background .5s var(--ease), backdrop-filter .5s var(--ease);
     }
@@ -150,10 +150,10 @@
     .menu-toggle span, .mobile-menu a{ transition:none; }
   }
 
-  /* ---------- filters (PCではヘッダーのカテゴリメニューと重複するため非表示。モバイルのみ表示) ---------- */
+  /* ---------- filters (PCではヘッダーのカテゴリメニューと重複するため非表示。モバイルのみページ最下部に表示) ---------- */
   .filters{
     display:none; gap:var(--space-3); flex-wrap:wrap;
-    padding:var(--space-4); border-bottom:1px solid var(--line);
+    padding:var(--space-4); border-top:1px solid var(--line);
   }
   .filters button{
     font-size:0.75rem; letter-spacing:0.06em; color:var(--ink-soft); padding:4px 0;
@@ -242,9 +242,9 @@
   <a href="/movies">MOVIE</a>
 </nav>
 
-<nav class="filters" id="filters"></nav>
-
 <section class="grid" id="grid"></section>
+
+<nav class="filters" id="filters"></nav>
 
 <script src="works-data.js"></script>
 <script>
