@@ -99,6 +99,8 @@
     transition:width .3s var(--ease), height .3s var(--ease), opacity .3s var(--ease);
   }
   .cursor-ring.active{ width:32px; height:32px; opacity:1; }
+  /* スプラッシュ表示中はカスタムカーソル(丸)を隠し、トップページが現れてから見せる */
+  .splash ~ .cursor-dot, .splash ~ .cursor-ring{ opacity:0 !important; }
   @media (hover:hover) and (pointer:fine){
     body.cursor-ready, body.cursor-ready a, body.cursor-ready .marquee-item{ cursor:none; }
   }
