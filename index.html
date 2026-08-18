@@ -310,9 +310,8 @@
     }
     .hero-menu.open a{ opacity:1; transform:translateY(0); pointer-events:auto; }
     .row-head{ padding:0 var(--space-2); }
-    /* スマホは自動アニメーションを止めて、指でのスクロールに追従させる */
-    .marquee{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .marquee-track{ animation:none !important; }
+    /* スマホはCSSアニメーションを止めて、JS(transform)で自動送り+指ドラッグ追従させる */
+    .marquee-track{ animation:none !important; touch-action:pan-y; }
     .marquee-item{ height:212px; }
     .row-more{ padding:var(--space-2) var(--space-2) 0; }
     .rows{ padding:var(--space-5) 0 var(--space-4); }
@@ -556,7 +555,9 @@
     rowsEl.appendChild(movieBlock);
   }
 
-  /* ---------- スマホ: 自動スライド(JSでscrollLeftを送る)+ 指で触ったら自動送りを一時停止して追従 ---------- */
+  /* ---------- スマホ: 自動スライド(transformで描画)+ 指で横ドラッグすると追従、離すとまた自動送りに戻る ----------
+     scrollLeftをJSで動かす方式はiOSのネイティブ慣性スクロールと競合して途中で止まることがあるため、
+     transform:translateXで完全に自前描画する方式に統一する。 */
   {
     const isMobileMarquee = window.matchMedia('(max-width:640px)').matches;
     const reduceMotionMarquee = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -566,45 +567,74 @@
         if(!track) return;
         const halfWidth = track.scrollWidth / 2; // アイテムを2セット並べているので、半分が1周分の幅
         if(!halfWidth) return;
-        const pxPerSecond = 14; // ゆったり流れる速さに固定(カテゴリごとの速度差はなくす)
-        const dir = marquee.classList.contains('reverse') ? -1 : 1;
+        const pxPerSecond = 14; // ゆったり流れる速さ(カテゴリごとの差はなくして統一)
+        const reverse = marquee.classList.contains('reverse');
 
-        marquee.scrollLeft = dir < 0 ? halfWidth : 0;
-
+        let pos = 0; // 0〜halfWidthでループする「進んだ距離」(向きに関わらず常に増加のみ)
         let paused = false;
+        let dragging = false;
+        let dragLockX = null; // 横ドラッグと確定したら true、縦スクロールと確定したら false
+        let dragStartX = 0, dragStartY = 0, dragStartPos = 0;
         let resumeTimer = null;
         let lastTs = null;
 
+        function render(){
+          const tx = reverse ? (pos - halfWidth) : -pos;
+          track.style.transform = `translateX(${tx}px)`;
+        }
+
         function step(ts){
-          if(lastTs === null){
-            // 最初のフレームは基準時刻を記録するだけで、移動計算はしない
-            // (dt=0のまま計算すると境界判定が誤発火してカクつく/止まる原因になるため)
-            lastTs = ts;
-            requestAnimationFrame(step);
-            return;
-          }
+          if(lastTs === null){ lastTs = ts; requestAnimationFrame(step); return; }
           const dt = (ts - lastTs) / 1000;
           lastTs = ts;
-          if(!paused){
-            let next = marquee.scrollLeft + pxPerSecond * dir * dt;
-            if(next >= halfWidth) next -= halfWidth;
-            else if(next < 0) next += halfWidth;
-            marquee.scrollLeft = next;
+          if(!paused && !dragging){
+            pos += pxPerSecond * dt;
+            if(pos >= halfWidth) pos -= halfWidth;
+            render();
           }
           requestAnimationFrame(step);
         }
         requestAnimationFrame(step);
+        render();
 
         function scheduleResume(){
           if(resumeTimer) clearTimeout(resumeTimer);
           resumeTimer = setTimeout(()=>{ paused = false; lastTs = null; }, 1400);
         }
-        marquee.addEventListener('touchstart', ()=>{
+
+        marquee.addEventListener('touchstart', (e)=>{
           paused = true;
+          dragging = true;
+          dragLockX = null;
           if(resumeTimer) clearTimeout(resumeTimer);
+          dragStartX = e.touches[0].clientX;
+          dragStartY = e.touches[0].clientY;
+          dragStartPos = pos;
         }, {passive:true});
-        marquee.addEventListener('touchend', scheduleResume, {passive:true});
-        marquee.addEventListener('touchcancel', scheduleResume, {passive:true});
+
+        marquee.addEventListener('touchmove', (e)=>{
+          if(!dragging) return;
+          const dx = e.touches[0].clientX - dragStartX;
+          const dy = e.touches[0].clientY - dragStartY;
+          if(dragLockX === null && (Math.abs(dx) > 6 || Math.abs(dy) > 6)){
+            dragLockX = Math.abs(dx) > Math.abs(dy);
+          }
+          if(dragLockX === false) return; // 縦スクロールと判定。ページの通常スクロールに任せる
+          if(dragLockX === true && e.cancelable) e.preventDefault(); // 横ドラッグ中はページの縦スクロールを止める
+          let next = dragStartPos - dx;
+          next = ((next % halfWidth) + halfWidth) % halfWidth;
+          pos = next;
+          render();
+        }, {passive:false});
+
+        marquee.addEventListener('touchend', ()=>{
+          dragging = false;
+          scheduleResume();
+        }, {passive:true});
+        marquee.addEventListener('touchcancel', ()=>{
+          dragging = false;
+          scheduleResume();
+        }, {passive:true});
       });
     }
   }
