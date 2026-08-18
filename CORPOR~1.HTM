@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Corporate — COBACCO Creative</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff;
+    --ink:#111111;
+    --ink-soft:#6b6b6b;
+    --line:#e8e8e6;
+    --font:'Inter', -apple-system, sans-serif;
+    --space-1:8px;--space-2:16px;--space-3:24px;--space-4:40px;--space-5:64px;--space-6:96px;
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); font-family:var(--font);
+    overflow-x:clip; -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit; text-decoration:none;}
+  img{max-width:100%; display:block;}
+  button{font-family:inherit; background:none; border:none;}
+
+  /* ---------- grain ---------- */
+  .grain{
+    position:fixed; inset:0; z-index:50; pointer-events:none; opacity:0.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 9 -3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:140px 140px;
+  }
+
+  /* ---------- custom cursor ---------- */
+  .cursor-dot, .cursor-ring{
+    position:fixed; top:0; left:0; pointer-events:none; z-index:9999;
+    border-radius:50%; mix-blend-mode:difference;
+    transform:translate(-50%,-50%);
+  }
+  .cursor-dot{ width:6px; height:6px; background:#fff; }
+  .cursor-ring{
+    width:17px; height:17px; border:1px solid #fff; opacity:0.8;
+    transition:width .3s var(--ease), height .3s var(--ease), opacity .3s var(--ease);
+  }
+  .cursor-ring.active{ width:32px; height:32px; opacity:1; }
+  @media (hover:hover) and (pointer:fine){
+    body.cursor-ready, body.cursor-ready a, body.cursor-ready .grid-item{ cursor:none; }
+  }
+  @media (hover:none), (pointer:coarse){
+    .cursor-dot, .cursor-ring, .grain{ display:none; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .cursor-dot, .cursor-ring{ display:none; }
+    body.cursor-ready{ cursor:auto; }
+  }
+
+  /* ---------- lightbox ---------- */
+  .lightbox{
+    position:fixed; inset:0; z-index:500; background:rgba(255,255,255,0.97);
+    display:flex; align-items:center; justify-content:center; padding:var(--space-3);
+    opacity:0; visibility:hidden; transition:opacity .4s var(--ease);
+  }
+  .lightbox.open{ opacity:1; visibility:visible; }
+  .lightbox-figure{ max-width:min(1500px,95vw); max-height:92vh; text-align:center; }
+  .lightbox-figure img{
+    max-width:100%; max-height:85vh; margin:0 auto; object-fit:contain;
+    opacity:0; transform:scale(0.98); transition:opacity .35s var(--ease), transform .35s var(--ease);
+  }
+  .lightbox-figure img.show{ opacity:1; transform:scale(1); }
+  .lightbox-caption{ margin-top:var(--space-2); font-size:0.78rem; color:var(--ink-soft); letter-spacing:0.03em; }
+  .lightbox-caption b{ color:var(--ink); font-weight:500; margin-right:8px; }
+  .lightbox-close, .lightbox-prev, .lightbox-next{
+    position:fixed; color:var(--ink); cursor:pointer;
+    font-family:var(--font); font-size:0.75rem; letter-spacing:0.08em;
+  }
+  .lightbox-close{ top:var(--space-4); right:var(--space-4); }
+  .lightbox-prev{ left:var(--space-4); top:50%; transform:translateY(-50%); }
+  .lightbox-next{ right:var(--space-4); top:50%; transform:translateY(-50%); }
+  .lightbox-count{ position:fixed; bottom:var(--space-4); left:50%; transform:translateX(-50%); font-size:0.7rem; color:var(--ink-soft); }
+  @media (max-width:640px){
+    .lightbox-prev, .lightbox-next{ top:auto; bottom:var(--space-3); transform:none; }
+    .lightbox-prev{ left:var(--space-3); }
+    .lightbox-next{ right:var(--space-3); }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .lightbox, .lightbox-figure img{ transition:none; }
+  }
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,0.85); backdrop-filter:blur(8px) saturate(1.1); -webkit-backdrop-filter:blur(8px) saturate(1.1);
+  }
+  .header-left{ display:flex; align-items:center; gap:var(--space-4); }
+  .header-right{ display:flex; align-items:center; gap:var(--space-3); }
+  .logo{ font-size:0.85rem; font-weight:600; letter-spacing:0.01em; display:inline-block; }
+  .back{ font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-soft); display:inline-block; }
+
+  /* ---------- header nav (PC: ロゴの横にカテゴリメニューを常設) ---------- */
+  .header-nav{ display:none; align-items:center; gap:var(--space-3); }
+  .header-nav a{
+    font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-soft);
+    padding-bottom:2px; border-bottom:1px solid transparent;
+    transition:color .2s, border-color .2s;
+  }
+  .header-nav a:hover{ color:var(--ink); border-color:var(--ink); }
+  @media (min-width:641px){
+    .header-nav{ display:flex; }
+  }
+
+  /* ---------- mobile menu (ハンバーガー。固定ヘッダーの右側に添えて一緒に固定) ---------- */
+  .mobile-menu{ display:none; }
+  .menu-toggle{
+    display:none; flex-direction:column; justify-content:center; align-items:center; gap:5px;
+    width:44px; height:44px; padding:0; border:none; border-radius:50%; cursor:pointer;
+    background:rgba(255,255,255,0.65); backdrop-filter:blur(8px) saturate(1.1); -webkit-backdrop-filter:blur(8px) saturate(1.1);
+  }
+  .menu-toggle span{
+    display:block; width:22px; height:1.5px; background:var(--ink);
+    transition:transform .35s var(--ease), opacity .3s var(--ease);
+  }
+  .menu-toggle.open span:nth-child(1){ transform:translateY(6.5px) rotate(45deg); }
+  .menu-toggle.open span:nth-child(2){ opacity:0; }
+  .menu-toggle.open span:nth-child(3){ transform:translateY(-6.5px) rotate(-45deg); }
+  .mobile-menu a{
+    display:block; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink);
+    padding-bottom:3px; border-bottom:1px solid rgba(17,17,17,0.35);
+    opacity:0; transform:translateY(8px); pointer-events:none;
+    transition:opacity .25s var(--ease), transform .25s var(--ease), border-color .2s;
+  }
+  .mobile-menu.open a{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .mobile-menu a:hover{ border-color:var(--ink); }
+  @media (max-width:640px){
+    .mobile-menu{
+      display:flex; flex-direction:column; align-items:flex-end; gap:10px;
+      position:fixed; top:64px; right:var(--space-2); left:auto; bottom:auto; z-index:60;
+      padding:12px 16px; border-radius:3px;
+      transition:background .5s var(--ease), backdrop-filter .5s var(--ease);
+    }
+    .mobile-menu.open{
+      background:rgba(255,255,255,0.55); backdrop-filter:blur(8px) saturate(1.1); -webkit-backdrop-filter:blur(8px) saturate(1.1);
+    }
+    .menu-toggle{ display:flex; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .menu-toggle span, .mobile-menu a{ transition:none; }
+  }
+
+  /* ---------- filters (PCではヘッダーのカテゴリメニューと重複するため非表示。モバイルのみページ最下部に表示) ---------- */
+  .filters{
+    display:none; gap:var(--space-3); flex-wrap:wrap;
+    padding:var(--space-4); border-top:1px solid var(--line);
+  }
+  .filters button{
+    font-size:0.75rem; letter-spacing:0.06em; color:var(--ink-soft); padding:4px 0;
+    border-bottom:1px solid transparent; transition:color .2s, border-color .2s; cursor:pointer;
+  }
+  .filters button.active, .filters button:hover{ color:var(--ink); border-color:var(--ink); }
+
+  /* ---------- grid ---------- */
+  .grid{
+    display:grid; grid-template-columns:repeat(5, 1fr);
+    gap:var(--space-3); padding:var(--space-5) var(--space-4) var(--space-6);
+  }
+  .grid-item{
+    opacity:0; transform:translateY(24px);
+    transition:opacity .9s var(--ease), transform .9s var(--ease);
+  }
+  .grid-item.in{ opacity:1; transform:translateY(0); }
+  .thumb{
+    aspect-ratio:4/3; overflow:hidden; background:#f3f3f2; border-radius:2px; cursor:pointer;
+    transition:transform .5s var(--ease), box-shadow .5s var(--ease);
+  }
+  .thumb:hover{ transform:translateY(-6px); box-shadow:0 20px 30px -16px rgba(0,0,0,0.22); }
+  .thumb img{ width:100%; height:100%; object-fit:cover; transition:transform .6s var(--ease); }
+  .thumb:hover img{ transform:scale(1.05); }
+
+  .empty{ padding:var(--space-6) var(--space-4); color:var(--ink-soft); font-size:0.85rem; }
+
+  @media (max-width:1024px){
+    .grid{ grid-template-columns:repeat(3, 1fr); }
+  }
+  @media (max-width:640px){
+    header, .filters{ padding-left:var(--space-2); padding-right:var(--space-2); }
+    .filters{ display:flex; }
+    .grid{ padding-left:var(--space-2); padding-right:var(--space-2); grid-template-columns:repeat(2, 1fr); }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .grid-item{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="作品拡大表示">
+  <button class="lightbox-close" id="lbClose" aria-label="閉じる">CLOSE ✕</button>
+  <button class="lightbox-prev" id="lbPrev" aria-label="前の作品">← PREV</button>
+  <button class="lightbox-next" id="lbNext" aria-label="次の作品">NEXT →</button>
+  <figure class="lightbox-figure">
+    <img id="lbImage" src="" alt="">
+    <figcaption class="lightbox-caption" id="lbCaption"></figcaption>
+  </figure>
+  <div class="lightbox-count" id="lbCount"></div>
+</div>
+
+<header>
+  <div class="header-left">
+    <a class="logo" href="/">COBACCO Creative</a>
+    <nav class="header-nav">
+      <a href="/about">ABOUT</a>
+      <a href="/branding">BRANDING</a>
+      <a href="/corporate">CORPORATE</a>
+      <a href="/profile">PROFILE</a>
+      <a href="/artist">ARTIST</a>
+      <a href="/event">EVENT</a>
+      <a href="/movies">MOVIE</a>
+    </nav>
+  </div>
+  <div class="header-right">
+    <a class="back" href="/">← TOP</a>
+    <button class="menu-toggle" id="menuToggle" aria-label="メニュー" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<nav class="mobile-menu" id="mobileMenu">
+  <a href="/about">ABOUT</a>
+  <a href="/branding">BRANDING</a>
+  <a href="/corporate">CORPORATE</a>
+  <a href="/profile">PROFILE</a>
+  <a href="/artist">ARTIST</a>
+  <a href="/event">EVENT</a>
+  <a href="/movies">MOVIE</a>
+</nav>
+
+<section class="grid" id="grid"></section>
+
+<nav class="filters" id="filters"></nav>
+
+<script src="works-data.js"></script>
+<script>
+  // work.image があれば実写真を優先。無ければプレースホルダー画像にフォールバック。
+  function thumbSrc(work){
+    return work.image || `https://picsum.photos/seed/${work.seed}/${work.w}/${work.h}`;
+  }
+  function fullSrc(work){
+    return work.image || `https://picsum.photos/seed/${work.seed}/1200/900`;
+  }
+  // 縦構図(w<h)の写真は顔が上部に来やすいため、トリミング位置を上寄りに。
+  // work.focus があればそちらを優先(個別に微調整したい写真だけ上書き)。
+  function focusPos(work){
+    if(work.focus) return work.focus;
+    return (work.w < work.h) ? '50% 18%' : '50% 50%';
+  }
+
+  // カテゴリ判定: /branding のようなクリーンURL(pathname)を優先し、
+  // 従来の /branding (クエリ)にも後方互換で対応。
+  const params = new URLSearchParams(location.search);
+  const pathCat = location.pathname.replace(/^\/+|\/+$/g, '');
+  let currentFilter = 'all';
+  if(params.get('cat') && WORKS_META[params.get('cat')]){
+    currentFilter = params.get('cat');
+  }else if(WORKS_META[pathCat]){
+    currentFilter = pathCat;
+  }
+
+  const filtersEl = document.getElementById('filters');
+  const gridEl = document.getElementById('grid');
+
+  function buildFilters(){
+    const cats = Object.keys(WORKS_META);
+    filtersEl.innerHTML = cats.map(key=>{
+      const label = WORKS_META[key].name;
+      const active = key === currentFilter ? ' active' : '';
+      return `<button class="${active.trim()}" data-cat="${key}">${label}</button>`;
+    }).join('');
+    filtersEl.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        currentFilter = btn.dataset.cat;
+        history.replaceState(null, '', currentFilter === 'all' ? '/works' : `/${currentFilter}`);
+        buildFilters();
+        renderGrid();
+      });
+    });
+  }
+
+  function currentList(){
+    if(currentFilter === 'all'){
+      return Object.keys(WORKS_META).flatMap(key=> WORKS[key]);
+    }
+    return WORKS[currentFilter];
+  }
+
+  let gridIO;
+  function renderGrid(){
+    const list = currentList();
+    if(gridIO) gridIO.disconnect();
+    if(list.length === 0){
+      gridEl.innerHTML = '';
+      gridEl.insertAdjacentHTML('afterend', '<p class="empty">作品がまだありません。</p>');
+      return;
+    }
+    gridEl.innerHTML = list.map((work, i)=>`
+      <div class="grid-item" data-cat="${work.cat}" data-index="${i}">
+        <div class="thumb"><img src="${thumbSrc(work)}" width="${work.w}" height="${work.h}" alt="${work.title}" style="object-position:${focusPos(work)}"></div>
+      </div>
+    `).join('');
+
+    gridIO = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting){
+          entry.target.classList.add('in');
+          gridIO.unobserve(entry.target);
+        }
+      });
+    }, {threshold:0.1, rootMargin:'0px 0px -40px 0px'});
+    gridEl.querySelectorAll('.grid-item').forEach(el=> gridIO.observe(el));
+  }
+
+  buildFilters();
+  renderGrid();
+
+  /* ---------- モバイル: ハンバーガーメニューの開閉 ---------- */
+  {
+    const mobileMenuEl = document.getElementById('mobileMenu');
+    const menuToggle = document.getElementById('menuToggle');
+    if(mobileMenuEl && menuToggle){
+      menuToggle.addEventListener('click', ()=>{
+        const isOpen = mobileMenuEl.classList.toggle('open');
+        menuToggle.classList.toggle('open', isOpen);
+        menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+      mobileMenuEl.querySelectorAll('a').forEach(a=>{
+        a.addEventListener('click', ()=>{
+          mobileMenuEl.classList.remove('open');
+          menuToggle.classList.remove('open');
+          menuToggle.setAttribute('aria-expanded', 'false');
+        });
+      });
+    }
+  }
+
+  /* ---------- lightbox (トップページと同じ考え方) ---------- */
+  const lightbox = document.getElementById('lightbox');
+  const lbImage = document.getElementById('lbImage');
+  const lbCaption = document.getElementById('lbCaption');
+  const lbCount = document.getElementById('lbCount');
+  let lbList = [], lbIndex = 0;
+
+  function renderLightbox(){
+    const work = lbList[lbIndex];
+    lbImage.classList.remove('show');
+    const hiRes = new Image();
+    hiRes.onload = ()=>{
+      lbImage.src = hiRes.src;
+      requestAnimationFrame(()=> lbImage.classList.add('show'));
+    };
+    hiRes.src = fullSrc(work);
+    lbCaption.innerHTML = `<b>${work.title}</b>`;
+    lbCount.textContent = `${lbIndex+1} / ${lbList.length}`;
+  }
+  function openLightbox(list, index){
+    lbList = list;
+    lbIndex = index;
+    renderLightbox();
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox(){
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function stepLightbox(dir){
+    lbIndex = (lbIndex + dir + lbList.length) % lbList.length;
+    renderLightbox();
+  }
+
+  document.getElementById('lbClose').addEventListener('click', closeLightbox);
+  document.getElementById('lbPrev').addEventListener('click', ()=> stepLightbox(-1));
+  document.getElementById('lbNext').addEventListener('click', ()=> stepLightbox(1));
+  lightbox.addEventListener('click', (e)=>{ if(e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', (e)=>{
+    if(!lightbox.classList.contains('open')) return;
+    if(e.key === 'Escape') closeLightbox();
+    if(e.key === 'ArrowLeft') stepLightbox(-1);
+    if(e.key === 'ArrowRight') stepLightbox(1);
+  });
+
+  /* ---------- スマホ: ライトボックスを左右にフリックして前後の作品へ ---------- */
+  {
+    let lbTouchStartX = null;
+    lightbox.addEventListener('touchstart', (e)=>{
+      lbTouchStartX = e.changedTouches[0].clientX;
+    }, {passive:true});
+    lightbox.addEventListener('touchend', (e)=>{
+      if(lbTouchStartX === null) return;
+      const dx = e.changedTouches[0].clientX - lbTouchStartX;
+      if(Math.abs(dx) > 40){
+        stepLightbox(dx < 0 ? 1 : -1);
+      }
+      lbTouchStartX = null;
+    }, {passive:true});
+  }
+
+  gridEl.addEventListener('click', (e)=>{
+    const item = e.target.closest('.grid-item');
+    if(!item) return;
+    openLightbox(currentList(), parseInt(item.dataset.index, 10));
+  });
+
+  /* ---------- cursor dot + ring ---------- */
+  const canHover = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if(canHover && !reduceMotion){
+    document.body.classList.add('cursor-ready');
+    const dot = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let mx = window.innerWidth/2, my = window.innerHeight/2, rx = mx, ry = my;
+
+    window.addEventListener('mousemove', (e)=>{
+      mx = e.clientX; my = e.clientY;
+      dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
+    });
+
+    function ringLoop(){
+      rx += (mx-rx)*0.18;
+      ry += (my-ry)*0.18;
+      ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%,-50%)`;
+      requestAnimationFrame(ringLoop);
+    }
+    ringLoop();
+
+    document.addEventListener('mouseover', (e)=>{
+      if(e.target.closest('a, .thumb, button')) ring.classList.add('active');
+    });
+    document.addEventListener('mouseout', (e)=>{
+      if(e.target.closest('a, .thumb, button')) ring.classList.remove('active');
+    });
+  }
+</script>
+</body>
+</html>
