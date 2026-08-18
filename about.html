@@ -62,24 +62,37 @@
     padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--line);
     background:rgba(255,255,255,0.85); backdrop-filter:blur(8px) saturate(1.1); -webkit-backdrop-filter:blur(8px) saturate(1.1);
   }
+  .header-left{ display:flex; align-items:center; gap:var(--space-4); }
+  .header-right{ display:flex; align-items:center; gap:var(--space-3); }
   .logo{ font-size:0.85rem; font-weight:600; letter-spacing:0.01em; display:inline-block; }
   .back{ font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-soft); display:inline-block; }
 
-  /* ---------- mobile menu (ハンバーガー) ---------- */
+  /* ---------- header nav (PC: ロゴの横にカテゴリメニューを常設) ---------- */
+  .header-nav{ display:none; align-items:center; gap:var(--space-3); }
+  .header-nav a{
+    font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-soft);
+    padding-bottom:2px; border-bottom:1px solid transparent;
+    transition:color .2s, border-color .2s;
+  }
+  .header-nav a:hover{ color:var(--ink); border-color:var(--ink); }
+  @media (min-width:641px){
+    .header-nav{ display:flex; }
+  }
+
+  /* ---------- mobile menu (ハンバーガー。固定ヘッダーの右側に添えて一緒に固定) ---------- */
   .mobile-menu{ display:none; }
   .menu-toggle{
     display:none; flex-direction:column; justify-content:center; align-items:center; gap:5px;
     width:44px; height:44px; padding:0; border:none; border-radius:50%; cursor:pointer;
     background:rgba(255,255,255,0.65); backdrop-filter:blur(8px) saturate(1.1); -webkit-backdrop-filter:blur(8px) saturate(1.1);
-    order:99;
   }
   .menu-toggle span{
     display:block; width:22px; height:1.5px; background:var(--ink);
     transition:transform .35s var(--ease), opacity .3s var(--ease);
   }
-  .mobile-menu.open .menu-toggle span:nth-child(1){ transform:translateY(6.5px) rotate(45deg); }
-  .mobile-menu.open .menu-toggle span:nth-child(2){ opacity:0; }
-  .mobile-menu.open .menu-toggle span:nth-child(3){ transform:translateY(-6.5px) rotate(-45deg); }
+  .menu-toggle.open span:nth-child(1){ transform:translateY(6.5px) rotate(45deg); }
+  .menu-toggle.open span:nth-child(2){ opacity:0; }
+  .menu-toggle.open span:nth-child(3){ transform:translateY(-6.5px) rotate(-45deg); }
   .mobile-menu a{
     display:block; font-size:0.72rem; letter-spacing:0.08em; color:var(--ink);
     padding-bottom:3px; border-bottom:1px solid rgba(17,17,17,0.35);
@@ -90,8 +103,8 @@
   .mobile-menu a:hover{ border-color:var(--ink); }
   @media (max-width:640px){
     .mobile-menu{
-      display:flex; flex-direction:column; align-items:flex-start; gap:10px;
-      position:fixed; left:var(--space-2); bottom:var(--space-2); z-index:60;
+      display:flex; flex-direction:column; align-items:flex-end; gap:10px;
+      position:fixed; top:64px; right:var(--space-2); left:auto; bottom:auto; z-index:60;
       padding:12px 16px; border-radius:3px;
       transition:background .5s var(--ease), backdrop-filter .5s var(--ease);
     }
@@ -154,14 +167,27 @@
 <div class="cursor-ring" id="cursorRing"></div>
 
 <header>
-  <a class="logo" href="/">COBACCO Creative</a>
-  <a class="back" href="/">← TOP</a>
+  <div class="header-left">
+    <a class="logo" href="/">COBACCO Creative</a>
+    <nav class="header-nav">
+      <a href="/about">ABOUT</a>
+      <a href="/branding">BRANDING</a>
+      <a href="/corporate">CORPORATE</a>
+      <a href="/profile">PROFILE</a>
+      <a href="/artist">ARTIST</a>
+      <a href="/event">EVENT</a>
+      <a href="/movies">MOVIE</a>
+    </nav>
+  </div>
+  <div class="header-right">
+    <a class="back" href="/">← TOP</a>
+    <button class="menu-toggle" id="menuToggle" aria-label="メニュー" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
 </header>
 
 <nav class="mobile-menu" id="mobileMenu">
-  <button class="menu-toggle" id="menuToggle" aria-label="メニュー" aria-expanded="false">
-    <span></span><span></span><span></span>
-  </button>
   <a href="/about">ABOUT</a>
   <a href="/branding">BRANDING</a>
   <a href="/corporate">CORPORATE</a>
@@ -202,11 +228,13 @@
     if(mobileMenuEl && menuToggle){
       menuToggle.addEventListener('click', ()=>{
         const isOpen = mobileMenuEl.classList.toggle('open');
+        menuToggle.classList.toggle('open', isOpen);
         menuToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       });
       mobileMenuEl.querySelectorAll('a').forEach(a=>{
         a.addEventListener('click', ()=>{
           mobileMenuEl.classList.remove('open');
+          menuToggle.classList.remove('open');
           menuToggle.setAttribute('aria-expanded', 'false');
         });
       });
