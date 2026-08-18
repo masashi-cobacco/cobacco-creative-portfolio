@@ -311,9 +311,9 @@
     .hero-menu.open a{ opacity:1; transform:translateY(0); pointer-events:auto; }
     .row-head{ padding:0 var(--space-2); }
     /* スマホは自動アニメーションを止めて、指でのスクロールに追従させる */
-    .marquee{ overflow-x:auto; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
+    .marquee{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .marquee-track{ animation:none !important; }
-    .marquee-item{ height:212px; scroll-snap-align:start; }
+    .marquee-item{ height:212px; }
     .row-more{ padding:var(--space-2) var(--space-2) 0; }
     .rows{ padding:var(--space-5) 0 var(--space-4); }
     .blob{ filter:blur(50px); }
@@ -554,6 +554,54 @@
       </div>
     `;
     rowsEl.appendChild(movieBlock);
+  }
+
+  /* ---------- スマホ: 自動スライド(JSでscrollLeftを送る)+ 指で触ったら自動送りを一時停止して追従 ---------- */
+  {
+    const isMobileMarquee = window.matchMedia('(max-width:640px)').matches;
+    const reduceMotionMarquee = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(isMobileMarquee && !reduceMotionMarquee){
+      document.querySelectorAll('.marquee').forEach(marquee=>{
+        const track = marquee.querySelector('.marquee-track');
+        if(!track) return;
+        const halfWidth = track.scrollWidth / 2; // アイテムを2セット並べているので、半分が1周分の幅
+        if(!halfWidth) return;
+        const duration = parseFloat(track.style.animationDuration) || 40;
+        const pxPerSecond = halfWidth / duration;
+        const dir = marquee.classList.contains('reverse') ? -1 : 1;
+
+        marquee.scrollLeft = dir < 0 ? halfWidth : 0;
+
+        let paused = false;
+        let resumeTimer = null;
+        let lastTs = null;
+
+        function step(ts){
+          if(lastTs === null) lastTs = ts;
+          const dt = (ts - lastTs) / 1000;
+          lastTs = ts;
+          if(!paused){
+            let next = marquee.scrollLeft + pxPerSecond * dir * dt;
+            if(next >= halfWidth) next -= halfWidth;
+            if(next <= 0) next += halfWidth;
+            marquee.scrollLeft = next;
+          }
+          requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+
+        function scheduleResume(){
+          if(resumeTimer) clearTimeout(resumeTimer);
+          resumeTimer = setTimeout(()=>{ paused = false; lastTs = null; }, 1400);
+        }
+        marquee.addEventListener('touchstart', ()=>{
+          paused = true;
+          if(resumeTimer) clearTimeout(resumeTimer);
+        }, {passive:true});
+        marquee.addEventListener('touchend', scheduleResume, {passive:true});
+        marquee.addEventListener('touchcancel', scheduleResume, {passive:true});
+      });
+    }
   }
 
   /* ---------- fade-in on scroll ---------- */
