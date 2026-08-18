@@ -583,6 +583,10 @@
         let dragStartX = 0, dragStartY = 0, dragStartPos = 0;
         let resumeTimer = null;
         let lastTs = null;
+        // reverse行は pos の増減とtranslateXの向きが逆になるため、ドラッグ量→posの変換はdirSignで揃える
+        const dirSign = reverse ? 1 : -1;
+        let momentum = 0; // フリック後の慣性スピード(px/秒、pos空間)
+        let lastMoveX = 0, lastMoveT = 0, moveVelocity = 0; // 直近の指の動きから速度を算出するための記録
 
         function render(){
           const tx = reverse ? (pos - halfWidth) : -pos;
@@ -593,10 +597,19 @@
           if(lastTs === null){ lastTs = ts; requestAnimationFrame(step); return; }
           const dt = (ts - lastTs) / 1000;
           lastTs = ts;
-          if(!paused && !dragging){
-            pos += pxPerSecond * dt;
-            if(pos >= halfWidth) pos -= halfWidth;
-            render();
+          if(!dragging){
+            if(Math.abs(momentum) > 2){
+              // フリックの勢いで数枚分流れるようにし、摩擦で徐々に減速させる
+              pos += momentum * dt;
+              pos = ((pos % halfWidth) + halfWidth) % halfWidth;
+              momentum *= Math.pow(0.06, dt); // 摩擦(dtに依存しない滑らかな減衰)
+              render();
+            }else if(!paused){
+              momentum = 0;
+              pos += pxPerSecond * dt;
+              if(pos >= halfWidth) pos -= halfWidth;
+              render();
+            }
           }
           requestAnimationFrame(step);
         }
@@ -612,35 +625,58 @@
           paused = true;
           dragging = true;
           dragLockX = null;
+          momentum = 0;
           if(resumeTimer) clearTimeout(resumeTimer);
           dragStartX = e.touches[0].clientX;
           dragStartY = e.touches[0].clientY;
           dragStartPos = pos;
+          lastMoveX = dragStartX;
+          lastMoveT = performance.now();
+          moveVelocity = 0;
         }, {passive:true});
 
         marquee.addEventListener('touchmove', (e)=>{
           if(!dragging) return;
-          const dx = e.touches[0].clientX - dragStartX;
+          const x = e.touches[0].clientX;
+          const dx = x - dragStartX;
           const dy = e.touches[0].clientY - dragStartY;
           if(dragLockX === null && (Math.abs(dx) > 6 || Math.abs(dy) > 6)){
             dragLockX = Math.abs(dx) > Math.abs(dy);
           }
           if(dragLockX === false) return; // 縦スクロールと判定。ページの通常スクロールに任せる
           if(dragLockX === true && e.cancelable) e.preventDefault(); // 横ドラッグ中はページの縦スクロールを止める
-          let next = dragStartPos - dx;
+
+          // 指を右に動かしたら常に写真も右に流れる向きになるよう、reverse行は符号を反転させる
+          let next = dragStartPos + dirSign * dx;
           next = ((next % halfWidth) + halfWidth) % halfWidth;
           pos = next;
           render();
+
+          // 直近の移動から瞬間速度を計算(離した瞬間のフリック速度に使う)
+          const now = performance.now();
+          const elapsed = now - lastMoveT;
+          if(elapsed > 0){
+            moveVelocity = dirSign * (x - lastMoveX) / (elapsed / 1000);
+          }
+          lastMoveX = x;
+          lastMoveT = now;
         }, {passive:false});
 
-        marquee.addEventListener('touchend', ()=>{
+        function endDrag(){
           dragging = false;
-          scheduleResume();
-        }, {passive:true});
-        marquee.addEventListener('touchcancel', ()=>{
-          dragging = false;
-          scheduleResume();
-        }, {passive:true});
+          // 指を離す直前の速度をそのまま慣性(momentum)として引き継ぎ、数枚分スーッと流れるようにする
+          momentum = Math.max(-1400, Math.min(1400, moveVelocity));
+          lastTs = null;
+          if(Math.abs(momentum) > 2){
+            // 慣性が収まった後に自動送りへ戻す(だいたい減衰しきるまでの余裕を見て少し長めに)
+            if(resumeTimer) clearTimeout(resumeTimer);
+            resumeTimer = setTimeout(()=>{ paused = false; lastTs = null; }, 1800);
+          }else{
+            scheduleResume();
+          }
+        }
+        marquee.addEventListener('touchend', endDrag, {passive:true});
+        marquee.addEventListener('touchcancel', endDrag, {passive:true});
       });
     }
   }
