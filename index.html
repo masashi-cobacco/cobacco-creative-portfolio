@@ -66,6 +66,16 @@
     .splash.out{ transition:none; }
   }
 
+  /* スプラッシュが消えるのに合わせて、下のトップページ本体をフェードインさせる */
+  .page-reveal{
+    opacity:0;
+    transition:opacity 1.1s var(--ease);
+  }
+  .page-reveal.in{ opacity:1; }
+  @media (prefers-reduced-motion:reduce){
+    .page-reveal{ transition:none; opacity:1; }
+  }
+
   /* ---------- grain ---------- */
   .grain{
     position:fixed; inset:0; z-index:50; pointer-events:none; opacity:0.035;
@@ -300,7 +310,10 @@
     }
     .hero-menu.open a{ opacity:1; transform:translateY(0); pointer-events:auto; }
     .row-head{ padding:0 var(--space-2); }
-    .marquee-item{ height:212px; }
+    /* スマホは自動アニメーションを止めて、指でのスクロールに追従させる */
+    .marquee{ overflow-x:auto; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; }
+    .marquee-track{ animation:none !important; }
+    .marquee-item{ height:212px; scroll-snap-align:start; }
     .row-more{ padding:var(--space-2) var(--space-2) 0; }
     .rows{ padding:var(--space-5) 0 var(--space-4); }
     .blob{ filter:blur(50px); }
@@ -318,7 +331,7 @@
     .menu-toggle span, .hero-menu a{ transition:none; }
   }
 </style>
-<noscript><style>.row-block{ opacity:1 !important; transform:none !important; } .splash{ display:none; }</style></noscript>
+<noscript><style>.row-block{ opacity:1 !important; transform:none !important; } .splash{ display:none; } .page-reveal{ opacity:1 !important; }</style></noscript>
 </head>
 <body>
 
@@ -342,6 +355,7 @@
   <div class="lightbox-count" id="lbCount"></div>
 </div>
 
+<div class="page-reveal" id="pageReveal">
 <section class="hero">
   <div class="hero-gradient">
     <div class="blob blob-1"></div>
@@ -373,6 +387,7 @@
   <span>株式会社COBACCO</span>
   <span>© 2026</span>
 </footer>
+</div>
 
 <script src="works-data.js"></script>
 <script>
@@ -394,6 +409,8 @@
 
       function hideSplash(){
         splash.classList.add('out');
+        const reveal = document.getElementById('pageReveal');
+        if(reveal) reveal.classList.add('in');
         setTimeout(()=>{
           splash.remove();
           document.body.style.overflow = '';
@@ -473,9 +490,9 @@
   const categories = [
     {key:'branding',  reverse:false, speed:118},
     {key:'corporate', reverse:true,  speed:135},
+    {key:'event',     reverse:false, speed:127},
     {key:'profile',   reverse:false, speed:110},
-    {key:'artist',    reverse:true,  speed:142},
-    {key:'event',     reverse:false, speed:127}
+    {key:'artist',    reverse:true,  speed:142}
   ];
 
   const rowsEl = document.getElementById('rows');
@@ -596,6 +613,23 @@
     if(e.key === 'ArrowLeft') stepLightbox(-1);
     if(e.key === 'ArrowRight') stepLightbox(1);
   });
+
+  /* ---------- スマホ: ライトボックスを左右にフリックして前後の作品へ ---------- */
+  {
+    let lbTouchStartX = null;
+    lightbox.addEventListener('touchstart', (e)=>{
+      lbTouchStartX = e.changedTouches[0].clientX;
+    }, {passive:true});
+    lightbox.addEventListener('touchend', (e)=>{
+      if(lbTouchStartX === null) return;
+      const dx = e.changedTouches[0].clientX - lbTouchStartX;
+      if(Math.abs(dx) > 40){
+        stepLightbox(dx < 0 ? 1 : -1);
+      }
+      lbTouchStartX = null;
+    }, {passive:true});
+  }
+
   rowsEl.addEventListener('click', (e)=>{
     const item = e.target.closest('.marquee-item');
     if(!item) return;

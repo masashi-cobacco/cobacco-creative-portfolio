@@ -90,8 +90,10 @@
 
   /* ---------- header ---------- */
   header{
+    position:sticky; top:0; z-index:40;
     display:flex; align-items:center; justify-content:space-between;
     padding:var(--space-3) var(--space-4); border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,0.85); backdrop-filter:blur(8px) saturate(1.1); -webkit-backdrop-filter:blur(8px) saturate(1.1);
   }
   .logo{ font-size:0.85rem; font-weight:600; letter-spacing:0.01em; display:inline-block; }
   .back{ font-size:0.72rem; letter-spacing:0.06em; color:var(--ink-soft); display:inline-block; }
@@ -248,9 +250,9 @@
   const gridEl = document.getElementById('grid');
 
   function buildFilters(){
-    const cats = ['all', ...Object.keys(WORKS_META)];
+    const cats = Object.keys(WORKS_META);
     filtersEl.innerHTML = cats.map(key=>{
-      const label = key === 'all' ? 'ALL' : WORKS_META[key].name;
+      const label = WORKS_META[key].name;
       const active = key === currentFilter ? ' active' : '';
       return `<button class="${active.trim()}" data-cat="${key}">${label}</button>`;
     }).join('');
@@ -363,6 +365,23 @@
     if(e.key === 'ArrowLeft') stepLightbox(-1);
     if(e.key === 'ArrowRight') stepLightbox(1);
   });
+
+  /* ---------- スマホ: ライトボックスを左右にフリックして前後の作品へ ---------- */
+  {
+    let lbTouchStartX = null;
+    lightbox.addEventListener('touchstart', (e)=>{
+      lbTouchStartX = e.changedTouches[0].clientX;
+    }, {passive:true});
+    lightbox.addEventListener('touchend', (e)=>{
+      if(lbTouchStartX === null) return;
+      const dx = e.changedTouches[0].clientX - lbTouchStartX;
+      if(Math.abs(dx) > 40){
+        stepLightbox(dx < 0 ? 1 : -1);
+      }
+      lbTouchStartX = null;
+    }, {passive:true});
+  }
+
   gridEl.addEventListener('click', (e)=>{
     const item = e.target.closest('.grid-item');
     if(!item) return;
